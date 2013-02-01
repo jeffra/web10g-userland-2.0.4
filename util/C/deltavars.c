@@ -17,6 +17,7 @@
  * Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
  *
  */
+#include <time.h>
 #include "scripts.h"
 
 void usage(void)
@@ -56,7 +57,13 @@ int main(int argc, char **argv)
     const char delim = ',';
     uint64_t tmpmask;
 
+    char *sleepval = NULL;
+    int sleepms = 1000;
+
     struct tcpe_mask mask;
+
+    struct tm *newtime;
+    time_t ltime;
 
     mask.masks[0] = DEFAULT_PERF_MASK;
     mask.masks[1] = DEFAULT_PATH_MASK;
@@ -73,33 +80,37 @@ int main(int argc, char **argv)
         exit(EXIT_FAILURE);
     }    
 
-    while ((opt = getopt(argc, argv, "hm:")) != -1) {
+    while ((opt = getopt(argc, argv, "htm:")) != -1) {
         switch (opt) {
-        case 'h':
-            usage();
-            exit(EXIT_SUCCESS);
-            break;
-        case 'm':
-            strmask = strdup(optarg);
+            case 'h':
+                usage();
+                exit(EXIT_SUCCESS);
+                break;
+            case 't':
+                sleepval = strdup(optarg);
+                sleepms = atoi(sleepval);
+                break;
+            case 'm':
+                strmask = strdup(optarg);
 
-            for (j = 0; j < 5; j++) {
-                char *strtmp;
-                strtmp = strsep(&strmask, &delim);
-                if (strtmp && strlen(strtmp)) {
-                    char *str;
-                    str = (str = strchr(strtmp, 'x')) ? str+1 : strtmp;
-                    if (sscanf(str, "%"PRIx64, &tmpmask) == 1) {
-                        mask.masks[j] = tmpmask & mask.masks[j];
-                        mask.if_mask[j] = 1;
+                for (j = 0; j < 5; j++) {
+                    char *strtmp;
+                    strtmp = strsep(&strmask, &delim);
+                    if (strtmp && strlen(strtmp)) {
+                        char *str;
+                        str = (str = strchr(strtmp, 'x')) ? str+1 : strtmp;
+                        if (sscanf(str, "%"PRIx64, &tmpmask) == 1) {
+                            mask.masks[j] = tmpmask & mask.masks[j];
+                            mask.if_mask[j] = 1;
+                        }
                     }
                 }
-            }
-            option = opt;
+                option = opt;
 
-            break;
-        default:
-            exit(EXIT_FAILURE);
-            break;
+                break;
+            default:
+                exit(EXIT_FAILURE);
+                break;
         }
     }
     if ((option == 'm') && (optind+1 > argc)) {
@@ -124,6 +135,10 @@ int main(int argc, char **argv)
         Chk(tcpe_read_vars(data_new, cid, cl));
 
         Chk(tcpe_data_delta(data, data_new, data_prev));
+
+        time(&ltime);
+        newtime = localtime(&ltime);
+        printf("%s", asctime(newtime));
 
         for (j = 0; j < ARRAYSIZE(data->val); j++) {
 
@@ -162,7 +177,7 @@ int main(int argc, char **argv)
             }
         }
 
-        sleep(1);
+        sleep(sleepms / 1000.0);
         printf("\n\n");
     }
 
