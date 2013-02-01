@@ -56,9 +56,6 @@ int main(int argc, char **argv)
     const char delim = ',';
     uint64_t tmpmask;
 
-    char *sleepval = NULL;
-    int sleepms = 1000;
-
     struct tcpe_mask mask;
 
     mask.masks[0] = DEFAULT_PERF_MASK;
